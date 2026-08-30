@@ -1,26 +1,421 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Deepan's Simple Website</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin-top: 100px;
-            background-color: #f4f4f4;
-        }
-        h1 {
-            color: #2c3e50;
-        }
-        p {
-            color: #555;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CI/CD, explained</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blueprint: #0b2545;
+    --blueprint-line: #1d4470;
+    --blueprint-line-soft: #16385f;
+    --paper: #f4f1ea;
+    --ink: #13202f;
+    --ink-dim: #4a5b6e;
+    --cyan: #6fd6e8;
+    --amber: #e8a355;
+    --line-w: 1px;
+  }
+  *{ box-sizing: border-box; margin:0; padding:0; }
+  html{ scroll-behavior: smooth; }
+  body{
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    line-height: 1.65;
+  }
+  .mono{ font-family: 'IBM Plex Mono', monospace; }
+
+  /* ---------- HERO (blueprint) ---------- */
+  .hero{
+    background: var(--blueprint);
+    color: var(--paper);
+    position: relative;
+    overflow: hidden;
+    padding: 90px 8vw 70px;
+  }
+  .hero::before{
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--blueprint-line-soft) var(--line-w), transparent var(--line-w)),
+      linear-gradient(90deg, var(--blueprint-line-soft) var(--line-w), transparent var(--line-w));
+    background-size: 40px 40px;
+    opacity: 0.6;
+  }
+  .hero-inner{ position: relative; max-width: 900px; }
+  .eyebrow{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--cyan);
+    margin-bottom: 22px;
+  }
+  .hero h1{
+    font-size: clamp(38px, 6vw, 62px);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -1px;
+  }
+  .hero h1 em{
+    font-style: normal;
+    color: var(--amber);
+  }
+  .hero p{
+    margin-top: 22px;
+    font-size: 18px;
+    max-width: 560px;
+    color: #cfe0ee;
+  }
+
+  /* pipeline diagram */
+  .diagram{
+    position: relative;
+    margin-top: 60px;
+    display: flex;
+    align-items: center;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  .stage{
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 140px;
+    text-align: center;
+  }
+  .stage .dot{
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 2px solid var(--cyan);
+    background: rgba(111,214,232,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--cyan);
+    flex-shrink: 0;
+  }
+  .stage .label{
+    margin-top: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--paper);
+  }
+  .stage .sub{
+    margin-top: 4px;
+    font-size: 11px;
+    color: #9fb4c8;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .connector{
+    flex: 1 1 40px;
+    min-width: 24px;
+    height: 2px;
+    background: repeating-linear-gradient(90deg, var(--cyan) 0 6px, transparent 6px 12px);
+    margin-top: -46px;
+  }
+
+  /* ---------- BODY SECTIONS ---------- */
+  main{ max-width: 980px; margin: 0 auto; }
+  section{
+    padding: 70px 8vw;
+    border-bottom: 1px solid #ddd8ca;
+  }
+  .section-tag{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    margin-bottom: 14px;
+  }
+  h2{
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 20px;
+  }
+  .lede{
+    font-size: 17px;
+    color: var(--ink-dim);
+    max-width: 680px;
+    margin-bottom: 36px;
+  }
+
+  /* CI vs CD split */
+  .split{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border: 1px solid #d5cfbe;
+  }
+  .split > div{
+    padding: 32px;
+  }
+  .split > div:first-child{
+    border-right: 1px solid #d5cfbe;
+    background: #fbfaf5;
+  }
+  .split h3{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .split .ci-label{ color: #2f6d4f; }
+  .split .cd-label{ color: #8a4b23; }
+  .split p{ color: var(--ink-dim); font-size: 15px; }
+  .split ul{ margin-top: 14px; padding-left: 18px; color: var(--ink-dim); font-size: 14.5px; }
+  .split li{ margin-bottom: 6px; }
+
+  /* stage cards */
+  .stage-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 18px;
+    margin-top: 8px;
+  }
+  .stage-card{
+    border: 1px solid #d5cfbe;
+    background: #fbfaf5;
+    padding: 22px;
+    position: relative;
+  }
+  .stage-card .idx{
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--amber);
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  .stage-card h4{
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .stage-card p{
+    font-size: 14px;
+    color: var(--ink-dim);
+  }
+
+  /* why it matters */
+  .why-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 28px;
+    margin-top: 8px;
+  }
+  .why-item{ border-left: 2px solid var(--blueprint); padding-left: 18px; }
+  .why-item h4{ font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .why-item p{ font-size: 14.5px; color: var(--ink-dim); }
+
+  footer{
+    padding: 40px 8vw;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--ink-dim);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  @media (max-width: 700px){
+    .split{ grid-template-columns: 1fr; }
+    .split > div:first-child{ border-right: none; border-bottom: 1px solid #d5cfbe; }
+    section{ padding: 50px 6vw; }
+    .hero{ padding: 70px 6vw 50px; }
+  }
+</style>
 </head>
 <body>
-    <h1>Welcome to My Website</h1>
-    <p>This page is being served by Apache inside a Docker container.</p>
-    <p>Environment: UAT</p>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow mono">// software delivery</div>
+    <h1>CI/CD is how code<br>gets to <em>production</em>, safely.</h1>
+    <p>
+      Continuous integration and continuous delivery turn "it works on my machine"
+      into a repeatable, automated path from a commit to a running system.
+    </p>
+
+    <div class="diagram">
+      <div class="stage">
+        <div class="dot mono">01</div>
+        <div class="label">Commit</div>
+        <div class="sub">git push</div>
+      </div>
+      <div class="connector"></div>
+      <div class="stage">
+        <div class="dot mono">02</div>
+        <div class="label">Build</div>
+        <div class="sub">compile</div>
+      </div>
+      <div class="connector"></div>
+      <div class="stage">
+        <div class="dot mono">03</div>
+        <div class="label">Test</div>
+        <div class="sub">verify</div>
+      </div>
+      <div class="connector"></div>
+      <div class="stage">
+        <div class="dot mono">04</div>
+        <div class="label">Release</div>
+        <div class="sub">package</div>
+      </div>
+      <div class="connector"></div>
+      <div class="stage">
+        <div class="dot mono">05</div>
+        <div class="label">Deploy</div>
+        <div class="sub">ship it</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<main>
+
+  <section>
+    <div class="section-tag">// the two halves</div>
+    <h2>CI and CD are two different jobs</h2>
+    <p class="lede">
+      They're usually said in one breath, but they solve different problems —
+      one keeps code correct, the other keeps it moving.
+    </p>
+    <div class="split">
+      <div>
+        <h3 class="ci-label">Continuous integration</h3>
+        <p>
+          Every time someone pushes code, it's automatically built and tested
+          against everyone else's changes. The goal is to catch breakage
+          within minutes, not weeks later.
+        </p>
+        <ul>
+          <li>Merges code frequently, in small batches</li>
+          <li>Runs an automated build on every push</li>
+          <li>Runs the test suite to catch regressions early</li>
+          <li>Fails fast and loudly, not silently</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="cd-label">Continuous delivery / deployment</h3>
+        <p>
+          Once code has passed CI, it's automatically packaged and pushed
+          toward production — either staged for a one-click release
+          (delivery) or shipped straight through (deployment).
+        </p>
+        <ul>
+          <li>Packages the build into a deployable artifact</li>
+          <li>Promotes it through environments (dev → staging → prod)</li>
+          <li>Delivery: a human approves the final release</li>
+          <li>Deployment: passing the pipeline <em>is</em> the approval</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-tag">// the pipeline</div>
+    <h2>What actually happens, stage by stage</h2>
+    <p class="lede">
+      A pipeline is just automation glued together in order. Each stage only
+      runs if the one before it passed.
+    </p>
+    <div class="stage-grid">
+      <div class="stage-card">
+        <div class="idx mono">01</div>
+        <h4>Commit</h4>
+        <p>A developer pushes code to a shared repository, triggering the pipeline via a webhook.</p>
+      </div>
+      <div class="stage-card">
+        <div class="idx mono">02</div>
+        <h4>Build</h4>
+        <p>Source code is compiled or bundled into a runnable form — often a Docker image.</p>
+      </div>
+      <div class="stage-card">
+        <div class="idx mono">03</div>
+        <h4>Test</h4>
+        <p>Unit, integration, and sometimes security scans run automatically against the build.</p>
+      </div>
+      <div class="stage-card">
+        <div class="idx mono">04</div>
+        <h4>Release</h4>
+        <p>A versioned, tested artifact is pushed to a registry, ready to be deployed.</p>
+      </div>
+      <div class="stage-card">
+        <div class="idx mono">05</div>
+        <h4>Deploy</h4>
+        <p>The artifact is rolled out to an environment — staging first, then production.</p>
+      </div>
+      <div class="stage-card">
+        <div class="idx mono">06</div>
+        <h4>Monitor</h4>
+        <p>Logs and metrics confirm the release is healthy, or trigger a rollback if it isn't.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-tag">// why bother</div>
+    <h2>What this buys you</h2>
+    <div class="why-grid">
+      <div class="why-item">
+        <h4>Faster feedback</h4>
+        <p>A broken build is caught in minutes, while the change is still fresh in the developer's head.</p>
+      </div>
+      <div class="why-item">
+        <h4>Smaller, safer changes</h4>
+        <p>Frequent small releases are easier to reason about — and easier to roll back — than rare big ones.</p>
+      </div>
+      <div class="why-item">
+        <h4>Consistency</h4>
+        <p>The same automated steps run every time, removing manual, error-prone release rituals.</p>
+      </div>
+      <div class="why-item">
+        <h4>Confidence to ship</h4>
+        <p>When tests and deploys are automated, shipping stops being a special, nerve-wracking event.</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="border-bottom:none;">
+    <div class="section-tag">// common tools</div>
+    <h2>What tends to show up in a real pipeline</h2>
+    <p class="lede">These aren't mandatory, but they're the usual cast of characters.</p>
+    <div class="stage-grid">
+      <div class="stage-card">
+        <div class="idx mono">CI/CD server</div>
+        <h4>Jenkins, GitHub Actions, GitLab CI</h4>
+        <p>Orchestrates the pipeline — watches for commits and runs each stage in order.</p>
+      </div>
+      <div class="stage-card">
+        <div class="idx mono">Packaging</div>
+        <h4>Docker</h4>
+        <p>Bundles the app and its dependencies into one portable image.</p>
+      </div>
+      <div class="stage-card">
+        <div class="idx mono">Infra</div>
+        <h4>Terraform, Kubernetes, AWS</h4>
+        <p>Defines and runs the environment the artifact actually deploys into.</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <span>ci/cd, explained</span>
+  <span>build → test → release → deploy → monitor → repeat</span>
+</footer>
+
 </body>
 </html>
